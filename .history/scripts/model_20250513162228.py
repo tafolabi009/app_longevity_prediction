@@ -161,14 +161,10 @@ class AppLongevityModel:
             )
             
             self.models['lgb'] = lgb.LGBMRegressor(
-                objective='regression',
                 n_estimators=100,
-                learning_rate=0.05,
-                max_depth=6,
-                num_leaves=31,
-                feature_fraction=0.9,
-                verbosity=-1,
-                verbose=-1
+                learning_rate=0.1,
+                max_depth=5,
+                random_state=42
             )
         
         # Deep learning model if LSTM is enabled
@@ -290,15 +286,11 @@ class AppLongevityModel:
                 # Train standard ML models
                 if name == 'lgb':
                     # Debug: print column names for LightGBM
-                    print(f"LightGBM feature names before sanitization: {list(X_train_sanitized.columns)[:5]}...")
+                    print(f"LightGBM feature names: {X_train_sanitized.columns.tolist()}")
                     # Additional sanitization for LightGBM
                     try:
-                        X_train_lgb, rename_dict = self._sanitize_feature_names_for_lightgbm(X_train_sanitized)
-                        X_test_lgb, _ = self._sanitize_feature_names_for_lightgbm(X_test_sanitized)
-                        print(f"LightGBM feature names after sanitization: {list(X_train_lgb.columns)[:5]}...")
-                        
-                        model.fit(X_train_lgb, y_train)
-                        y_pred = model.predict(X_test_lgb)
+                        model.fit(X_train_sanitized, y_train)
+                        y_pred = model.predict(X_test_sanitized)
                     except Exception as e:
                         print(f"LightGBM error: {str(e)}")
                         print("Skipping LightGBM model due to feature name compatibility issues")
@@ -330,29 +322,6 @@ class AppLongevityModel:
             self._generate_shap_values(self.models[self.best_model], X_test_sanitized)
         
         return self.model_metrics
-    
-    def _sanitize_feature_names_for_lightgbm(self, df):
-        """Create a copy of the dataframe with sanitized column names for LightGBM"""
-        # LightGBM has stricter requirements for feature names
-        import re
-        
-        # Create a copy of the dataframe
-        df_sanitized = df.copy()
-        
-        # Sanitize column names by removing all non-alphanumeric characters
-        rename_dict = {}
-        for col in df.columns:
-            # Replace any non-alphanumeric character with underscore
-            sanitized_col = re.sub(r'[^0-9a-zA-Z_]+', '_', col)
-            # Ensure the column name starts with a letter or underscore (not a number)
-            if sanitized_col[0].isdigit():
-                sanitized_col = 'f_' + sanitized_col
-            rename_dict[col] = sanitized_col
-        
-        # Rename columns
-        df_sanitized = df_sanitized.rename(columns=rename_dict)
-        
-        return df_sanitized, rename_dict
     
     def _evaluate_and_store_metrics(self, model_name, y_true, y_pred):
         """Evaluate model and store metrics"""

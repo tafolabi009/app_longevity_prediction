@@ -161,14 +161,10 @@ class AppLongevityModel:
             )
             
             self.models['lgb'] = lgb.LGBMRegressor(
-                objective='regression',
                 n_estimators=100,
-                learning_rate=0.05,
-                max_depth=6,
-                num_leaves=31,
-                feature_fraction=0.9,
-                verbosity=-1,
-                verbose=-1
+                learning_rate=0.1,
+                max_depth=5,
+                random_state=42
             )
         
         # Deep learning model if LSTM is enabled
@@ -290,15 +286,12 @@ class AppLongevityModel:
                 # Train standard ML models
                 if name == 'lgb':
                     # Debug: print column names for LightGBM
-                    print(f"LightGBM feature names before sanitization: {list(X_train_sanitized.columns)[:5]}...")
+                    print(f"LightGBM feature names: {X_train_sanitized.columns.tolist()}")
                     # Additional sanitization for LightGBM
                     try:
-                        X_train_lgb, rename_dict = self._sanitize_feature_names_for_lightgbm(X_train_sanitized)
-                        X_test_lgb, _ = self._sanitize_feature_names_for_lightgbm(X_test_sanitized)
-                        print(f"LightGBM feature names after sanitization: {list(X_train_lgb.columns)[:5]}...")
-                        
-                        model.fit(X_train_lgb, y_train)
-                        y_pred = model.predict(X_test_lgb)
+                        X_sanitized, rename_dict = self._sanitize_feature_names_for_lightgbm(X_train_sanitized)
+                        model.fit(X_sanitized, y_train)
+                        y_pred = model.predict(X_test_sanitized)
                     except Exception as e:
                         print(f"LightGBM error: {str(e)}")
                         print("Skipping LightGBM model due to feature name compatibility issues")

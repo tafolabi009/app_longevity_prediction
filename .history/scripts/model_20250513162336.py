@@ -163,12 +163,9 @@ class AppLongevityModel:
             self.models['lgb'] = lgb.LGBMRegressor(
                 objective='regression',
                 n_estimators=100,
-                learning_rate=0.05,
-                max_depth=6,
-                num_leaves=31,
-                feature_fraction=0.9,
-                verbosity=-1,
-                verbose=-1
+                learning_rate=0.1,
+                max_depth=5,
+                random_state=42
             )
         
         # Deep learning model if LSTM is enabled
